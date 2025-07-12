@@ -5,4 +5,4 @@ const  ProfileController  = require('../controllers/profile.controller');
 
 // Route protégée par JWT
 router.get('/', protect, ProfileController.getProfile);
-module.egtxports = router;
+module.exports = router;
