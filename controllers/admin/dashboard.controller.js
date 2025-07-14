@@ -1,5 +1,4 @@
 const Project = require("../../models/project");
-
 const Task = require("../../models/task");
 const User = require("../../models/user");
 
@@ -97,7 +96,7 @@ exports.getStats = async (req, res) => {
       Project.countDocuments({ status: "active" }),
       Project.countDocuments({ status: "inactive" }),
       Project.countDocuments({ status: "completed" }),
-      Task.countDocuments(), // Total de toutes les tâches
+      Task.countDocuments(),
       Task.aggregate([
         {
           $facet: {
@@ -126,6 +125,9 @@ exports.getStats = async (req, res) => {
                       ],
                     },
                   },
+                  pending: {
+                    $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
+                  },
                 },
               },
             ],
@@ -145,18 +147,44 @@ exports.getStats = async (req, res) => {
       Task.find()
         .sort({ updatedAt: -1 })
         .limit(5)
-        .populate("project", "name logo")
-        .populate("assignedTo", "name profilePhoto"),
+        .populate({
+          path: "project",
+          select: "name logo"
+        })
+        .populate({
+          path: "assignedTo",
+          select: "profilePhoto position"
+        }),
     ]);
 
-    // ✅ Sécuriser l'accès à taskTypes et progressionStats
+    // 2. Tâches critiques (en retard) avec détails complets
+    const criticalTasks = await Task.find({
+      deadline: { $lt: new Date() },
+      status: { $ne: "completed" },
+    })
+      .sort({ deadline: 1 })
+      .limit(5)
+      .populate({
+        path: "project",
+        select: "name priority"
+      })
+      .populate({
+        path: "assignedTo",
+        select: "profilePhoto position"
+      });
+
+    // 3. Formatage des données
     const taskTypes = tasksStats[0]?.taskTypes || [];
     const progressionStats = tasksStats[0]?.progressionStats || [];
 
-    // 2. Formatage des données
     const formattedTasksStats = taskTypes.map((type) => ({
       type: type._id,
-      ...type,
+      total: type.total,
+      completed: type.completed,
+      inProgress: type.inProgress,
+      late: type.late,
+      pending: type.pending, // Ajout des tâches pending
+      completionRate: type.total > 0 ? Math.round((type.completed / type.total) * 100) : 0
     }));
 
     const progressionData = progressionStats[0] || {
@@ -164,16 +192,6 @@ exports.getStats = async (req, res) => {
       minProgression: 0,
       maxProgression: 0,
     };
-
-    // 3. Tâches critiques (en retard)
-    const criticalTasks = await Task.find({
-      deadline: { $lt: new Date() },
-      status: { $ne: "completed" },
-    })
-      .sort({ deadline: 1 })
-      .limit(5)
-      .populate("project", "name priority")
-      .populate("assignedTo", "name");
 
     // 4. Calcul de la progression globale
     const projects = await Project.find().select("progression");
@@ -185,7 +203,38 @@ exports.getStats = async (req, res) => {
           )
         : 0;
 
-    // ✅ Envoi de la réponse JSON
+    // Enrichissement des activités récentes
+    const enrichedRecentActivities = recentActivities.map(activity => ({
+      _id: activity._id,
+      title: activity.title,
+      type: activity.type,
+      status: activity.status,
+      progress: activity.progress,
+      project: activity.project,
+      assignedTo: {
+        photo: activity.assignedTo?.profilePhoto,
+        position: activity.assignedTo?.position
+      },
+      deadline: activity.deadline
+    }));
+
+    // Enrichissement des tâches critiques
+    const enrichedCriticalTasks = criticalTasks.map(task => ({
+      _id: task._id,
+      title: task.title,
+      type: task.type,
+      status: task.status,
+      progress: task.progress,
+      project: task.project,
+      assignedTo: {
+        photo: task.assignedTo?.profilePhoto,
+        position: task.assignedTo?.position
+      },
+      deadline: task.deadline,
+      daysLate: Math.floor((today - task.deadline) / (1000 * 60 * 60 * 24))
+    }));
+
+    // Réponse finale
     res.json({
       projects: {
         active: activeProjects,
@@ -198,15 +247,18 @@ exports.getStats = async (req, res) => {
         stats: formattedTasksStats,
         progression: progressionData,
         total: totalTasks,
-        dailyProgression
-        
+        dailyProgression,
+        statusDistribution: { // Nouvelle section pour la répartition par statut
+          completed: taskTypes.reduce((sum, type) => sum + type.completed, 0),
+          inProgress: taskTypes.reduce((sum, type) => sum + type.inProgress, 0),
+          late: taskTypes.reduce((sum, type) => sum + type.late, 0),
+          pending: taskTypes.reduce((sum, type) => sum + type.pending, 0)
+        }
       },
       activities: {
-        recent: recentActivities,
-        critical: criticalTasks
-      },
-      
-      
+        recent: enrichedRecentActivities,
+        critical: enrichedCriticalTasks
+      }
     });
   } catch (err) {
     console.error("[Dashboard Controller] Error:", err);
