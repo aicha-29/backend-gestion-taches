@@ -18,6 +18,7 @@ const ProjectSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  //la date ou le projet est demarrer 
   startDate: { 
     type: Date, 
     default: Date.now 
@@ -47,6 +48,7 @@ const ProjectSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'medium'
   },
+  //la date ou le projet est cree 
   createdAt: {
     type: Date,
     default: Date.now

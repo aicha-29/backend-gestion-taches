@@ -1,4 +1,5 @@
 const Project = require("../../models/project");
+
 const Task = require("../../models/task");
 const User = require("../../models/user");
 
@@ -191,18 +192,21 @@ exports.getStats = async (req, res) => {
         inactive: inactiveProjects,
         completed: completedProjects,
         total: activeProjects + inactiveProjects + completedProjects,
+        overallProgression
       },
       tasks: {
         stats: formattedTasksStats,
         progression: progressionData,
         total: totalTasks,
-        overallProgression,
-        dailyProgression,
+        dailyProgression
+        
       },
       activities: {
         recent: recentActivities,
-        critical: criticalTasks,
+        critical: criticalTasks
       },
+      
+      
     });
   } catch (err) {
     console.error("[Dashboard Controller] Error:", err);

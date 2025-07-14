@@ -3,10 +3,12 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth.routes");
 const cors = require("cors");
+const path = require('path');
 const authMiddleware = require('./middlewares/auth.middleware');
 const adminDashboardRoutes = require('./routes/admin/dashboard.routes');
 const profileRoutes = require('./routes/profile.routes');
 const projectRoutes = require('./routes/admin/project.routes');
+const projectDetailsRoutes=require('./routes/admin/projectDetails.routes');
 
 
 
@@ -22,6 +24,8 @@ app.use("/api/auth", authRoutes);//Toutes les routes définies dans authRoutes s
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin/projects', projectRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/admin/projectDetails',projectDetailsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Serveur démarré sur le port ${PORT}`));
