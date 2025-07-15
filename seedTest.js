@@ -1,69 +1,152 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
+const Project = require('./models/project');
+const Task = require('./models/task');
+const User = require('./models/user');
+const connectDB = require("./config/db");
 const dotenv = require("dotenv");
 
-const User = require("./models/user");
-const Project = require("./models/project");
-const Task = require("./models/task");
+dotenv.config();
+connectDB();
 
-dotenv.config(); // charge .env pour MONGODB_URI
-
-const seedData = async () => {
+// Fonction principale
+const seedDatabase = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("✅ Connexion à MongoDB réussie");
+    // Nettoyer la base de données existante
+    await Promise.all([
+      User.deleteMany(),
+      Project.deleteMany(),
+      Task.deleteMany()
+    ]);
 
-    // 1. Créer un utilisateur employé
-    const employee = new User({
-      name: "Employé Test",
-      email: "employee@devpu.com",
-      password: "test123", // sera hashé automatiquement
-      role: "employee",
-      position: "développeur",
-      cin: "E123456"
-    });
-    await employee.save();
+    console.log('Anciennes données supprimées');
 
-    // 2. Créer un projet
-    const project = new Project({
-      name: "Projet Test",
-      description: "Projet pour tests dashboard",
-      company: "DevPu",
-      city: "Rabat",
-      priority: "high"
-    });
-    await project.save();
+    // Création des utilisateurs (employés)
+    const employees = await User.insertMany([
+      {
+        name: "Jean Dupont",
+        email: "jean@entreprise.com",
+        password: "password123",
+        role: "employee",
+        position: "Développeur Frontend",
+        cin: "J123456",
+        profilePhoto: "jean.jpg"
+      },
+      {
+        name: "Marie Martin",
+        email: "marie@entreprise.com",
+        password: "password123",
+        role: "employee",
+        position: "Designer UI/UX",
+        cin: "M789012",
+        profilePhoto: "marie.jpg"
+      },
+      {
+        name: "Ahmed Khan",
+        email: "ahmed@entreprise.com",
+        password: "password123",
+        role: "employee",
+        position: "Développeur Backend",
+        cin: "A345678",
+        profilePhoto: "ahmed.jpg"
+      }
+    ]);
 
-    // 3. Créer des tâches liées à ce projet
-    const task1 = new Task({
-      title: "Tâche 1",
-      description: "Tâche normale",
-      type: "daily",
-      status: "inProgress",
-      project: project._id,
-      assignedTo: employee._id,
-      progress: 60
-    });
-    await task1.save();
+    console.log(`${employees.length} employés créés`);
 
-    const task2 = new Task({
-      title: "Tâche 2",
-      description: "Tâche en retard",
-      type: "long",
-      status: "pending",
-      deadline: new Date("2024-01-01"),
-      project: project._id,
-      assignedTo: employee._id,
-      progress: 0
-    });
-    await task2.save();
+    // Création des projets
+    const projects = await Project.insertMany([
+      {
+        name: "Site Web Corporatif",
+        description: "Développement du nouveau site web de l'entreprise",
+        company: "Tech Solutions",
+        city: "Casablanca",
+        priority: "high",
+        logo: "logo_tech.png",
+        assignedEmployees: [employees[0]._id, employees[1]._id]
+      },
+      {
+        name: "Application Mobile",
+        description: "Développement d'une application mobile cross-platform",
+        company: "Mobile Inc",
+        city: "Rabat",
+        status: "active",
+        logo: "logo_mobile.png",
+        assignedEmployees: [employees[2]._id]
+      },
+      {
+        name: "Système de Gestion",
+        description: "Plateforme de gestion interne",
+        company: "Internal Systems",
+        city: "Tanger",
+        status: "inactive",
+        logo: "logo_internal.png"
+      }
+    ]);
 
-    console.log("✅ Données de test insérées avec succès !");
+    console.log(`${projects.length} projets créés`);
+
+    // Création des tâches
+    const tasks = await Task.insertMany([
+      {
+        title: "Maquette Accueil",
+        description: "Créer la maquette de la page d'accueil",
+        type: "long",
+        status: "completed",
+        deadline: new Date('2023-12-15'),
+        project: projects[0]._id,
+        assignedTo: employees[1]._id,
+        progress: 100
+      },
+      {
+        title: "Intégration Header",
+        description: "Intégrer le header responsive",
+        type: "daily",
+        status: "inProgress",
+        project: projects[0]._id,
+        assignedTo: employees[0]._id,
+        progress: 70
+      },
+      {
+        title: "API Authentification",
+        description: "Développer le module d'authentification",
+        type: "long",
+        status: "pending",
+        deadline: new Date('2023-12-20'),
+        project: projects[1]._id,
+        assignedTo: employees[2]._id,
+        progress: 0
+      },
+      {
+        title: "Tests Unitaires",
+        description: "Écrire les tests unitaires pour le module utilisateur",
+        type: "long",
+        status: "pending",
+        deadline: new Date('2023-12-10'),
+        project: projects[1]._id,
+        progress: 0
+      }
+    ]);
+
+    console.log(`${tasks.length} tâches créées`);
+
+    // Mise à jour des progressions des projets
+    await Promise.all(
+      projects.map(project => mongoose.model('Project').findByIdAndUpdate(
+        project._id,
+        { $set: { progression: Math.floor(Math.random() * 100) } }
+      ))
+    );
+
+    console.log('Progression des projets mise à jour');
+
+    console.log('Base de données peuplée avec succès!');
+    process.exit(0);
+
   } catch (error) {
-    console.error("❌ Erreur lors de l'insertion :", error.message);
-  } finally {
-    mongoose.connection.close();
+    console.error('Erreur lors du peuplement de la base:', error);
+    process.exit(1);
   }
 };
 
-seedData();
-    
+// Exécution du script
+seedDatabase();

@@ -7,9 +7,10 @@ const path = require('path');
 const authMiddleware = require('./middlewares/auth.middleware');
 const adminDashboardRoutes = require('./routes/admin/dashboard.routes');
 const profileRoutes = require('./routes/profile.routes');
-const projectRoutes = require('./routes/admin/project.routes');
+const projectRoutes = require('./routes/admin/crudProjet.routes');
 const projectDetailsRoutes=require('./routes/admin/projectDetails.routes');
 const employeesRoutes = require('./routes/admin/employees.routes');
+
 
 
 
@@ -26,11 +27,10 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);//Toutes les routes définies dans authRoutes seront préfixées par /api/auth
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/admin/projects', projectRoutes);
+app.use('/api/admin/projects', projectRoutes);//aussi pour ajouter un projet 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/admin/projectDetails',projectDetailsRoutes);
 app.use('/api/admin/employees', employeesRoutes);
-
 
 
 const PORT = process.env.PORT || 5000;
