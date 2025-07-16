@@ -10,7 +10,7 @@ connectDB();
 
 // Fonction principale
 const seedDatabase = async () => {
-  try {
+  try{
     // Nettoyer la base de données existante
     await Promise.all([
       User.deleteMany(),
@@ -19,9 +19,9 @@ const seedDatabase = async () => {
     ]);
 
     console.log('Anciennes données supprimées');
-
+    const employees=[];
     // Création des utilisateurs (employés)
-    const employees = await User.insertMany([
+    usersTest=[
       {
         name: "Jean Dupont",
         email: "jean@entreprise.com",
@@ -48,8 +48,25 @@ const seedDatabase = async () => {
         position: "Développeur Backend",
         cin: "A345678",
         profilePhoto: "ahmed.jpg"
+      },
+      { name: "Admin DevPu",
+        email: "admin@devpu.com",
+        password: "admin123", // hashé automatiquement via pre('save')
+        role: "admin",
+        position:"directeur",
+        cin:123456,
+        profilePhoto:"./assets/image-directeur.png"
       }
-    ]);
+    ];
+
+         
+        for (const userData of usersTest) {
+          const user = new User(userData);
+          await user.save();
+          employees.push(user) // Le hash se fait automatiquement ici
+          console.log(`✅ Utilisateur ajouté : ${user.email}`);
+        } 
+    
 
     console.log(`${employees.length} employés créés`);
 
@@ -136,6 +153,7 @@ const seedDatabase = async () => {
         { $set: { progression: Math.floor(Math.random() * 100) } }
       ))
     );
+   
 
     console.log('Progression des projets mise à jour');
 
@@ -147,6 +165,7 @@ const seedDatabase = async () => {
     process.exit(1);
   }
 };
+
 
 // Exécution du script
 seedDatabase();

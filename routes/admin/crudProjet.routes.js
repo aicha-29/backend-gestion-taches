@@ -36,7 +36,14 @@ router.delete('/:id',
 crudProjectController.deleteProject
 );
 
-module.exports = router;
+router.get(
+  '/:id', 
+  authMiddleware,
+  roleMiddleware.roleMiddleware('admin'),
+  crudProjectController.getProjectDetails
+);
+
+
 
 
 module.exports = router;

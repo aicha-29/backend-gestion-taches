@@ -3,7 +3,6 @@ const connectDB = require("./config/db");
 const User = require("./models/user");
 
 dotenv.config();
-
 const createAdmin = async () => {
   try {
     await connectDB(); // Utilisation de la fonction centralisée
@@ -31,5 +30,4 @@ const createAdmin = async () => {
     process.exit(); // Termine le script proprement
   }
 };
-
 createAdmin();
