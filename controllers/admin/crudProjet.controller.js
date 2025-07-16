@@ -65,8 +65,8 @@ exports.createProject = async (req, res) => {
           city,
           endDate,
           priority,
-          logo: req.file?.logoPath || null,
-          thumbnail: req.file?.thumbnail || null
+          logo: req.file?.filename || null,
+          thumbnail: req.file?.filename || null
         });
 
         // Assignation des employés (inchangé)
