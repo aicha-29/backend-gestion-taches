@@ -59,8 +59,8 @@ const processImage = async (req, res, next) => {
         mozjpeg: true 
       })
       .toFile(thumbPath);
-      req.file.logoPath = path.join('uploads/projects/originals', file.filename).replace(/\\/g, '/');
-      req.file.thumbnail = path.join('uploads/projects/thumbnails', 'thumb_' + file.filename).replace(/\\/g, '/');
+      req.file.logoPath = path.join('uploads/projects/originals', req.file.filename).replace(/\\/g, '/');
+      req.file.thumbnail = path.join('uploads/projects/thumbnails', req.file.filename).replace(/\\/g, '/');
 
     next();
   } catch (err) {
