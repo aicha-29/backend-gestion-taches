@@ -138,16 +138,19 @@ exports.getAllProjectsForCards = async (req, res) => {
       .lean();
 
     const baseUrl = `${req.protocol}://${req.get('host')}/public/projects/`;
-    const formattedProjects = projects.map(project => ({
+    const formattedProjects = projects.map(project => {
+    const { logoUrl, thumbnailUrl } = buildImageUrls(req, project);
+      return{
       ...project,
-      logoUrl: project.logo ? `${baseUrl}/original/${project.logo}` : null,
-      thumbnailUrl: project.thumbnail ? `${baseUrl}/humbnail/${project.thumbnail}` : null,
+      logoUrl, 
+      thumbnailUrl,
       assignedEmployees: project.assignedEmployees?.map(emp => ({
         name: emp.name,
         position: emp.position,
         profilePhoto: emp.profilePhotoThumb ? `${baseUrl}/${emp.profilePhotoThumb}` : null
-      })) || []
-    }));
+      }))|| []
+    };
+  });
 
     res.json(formattedProjects);
   } catch (err) {
