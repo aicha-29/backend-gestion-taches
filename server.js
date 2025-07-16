@@ -28,7 +28,7 @@ app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin/projects', projectRoutes);//aussi pour ajouter un projet 
 app.use('/api/admin/employees', employeesRoutes);
-
+app.use('/public', express.static('public'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Serveur démarré sur le port ${PORT}`));

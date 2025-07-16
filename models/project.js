@@ -42,7 +42,11 @@ const ProjectSchema = new mongoose.Schema({
   logo: {
     type: String,
     default: ''
-  },
+  }, 
+  thumbnail:{
+    type: String,
+    default: ''
+  }, 
   priority: {
     type: String,
     enum: ['low', 'medium', 'high'],
