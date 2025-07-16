@@ -65,7 +65,7 @@ exports.createProject = async (req, res) => {
           city,
           endDate,
           priority,
-          logo: req.file?.logoPathw || null,
+          logo: req.file?.logoPath || null,
           thumbnail: req.file?.thumbnail || null
         });
 

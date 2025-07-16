@@ -10,6 +10,7 @@ const thumbDir = 'public/uploads/projects/thumbnails';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true });
 
+
 // Configuration de Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
