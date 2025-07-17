@@ -35,14 +35,14 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({
+const uploadProjectLogo = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: fileFilter
 }).single('logo');
 
 // Middleware pour traiter et redimensionner l'image
-const processImage = async (req, res, next) => {
+const processProjectLogo = async (req, res, next) => {
   if (!req.file) return next();
   
   try {
@@ -70,29 +70,34 @@ const processImage = async (req, res, next) => {
   }
 };
 
+ //CONFIGURATION UTILISATEURS
+const userUploadDir = 'public/uploads/users/originals';
+const userThumbDir = 'public/uploads/users/thumbnails';
 
-// Ajoutez cette configuration
+if (!fs.existsSync(userUploadDir)) fs.mkdirSync(userUploadDir, { recursive: true });
+if (!fs.existsSync(userThumbDir)) fs.mkdirSync(userThumbDir, { recursive: true });
+
 const userStorage = multer.diskStorage({
-  destination: 'public/uploads/users/originals',
+  destination: userUploadDir,
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, 'user-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
+const userFileFilter = (req, file, cb) => {
+  const filetypes = /jpeg|jpg|png/;
+  const mimetype = filetypes.test(file.mimetype);
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  
+  if (mimetype && extname) return cb(null, true);
+  cb(new Error('Seules les images JPEG/PNG sont autorisées'));
+};
+
 const uploadUserPhoto = multer({
   storage: userStorage,
   limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    }
-    cb(new Error('Seules les images JPEG/PNG sont autorisées'));
-  }
+  fileFilter: userFileFilter
 }).single('profilePhoto');
 
 const processUserPhoto = async (req, res, next) => {
@@ -100,7 +105,7 @@ const processUserPhoto = async (req, res, next) => {
   
   try {
     const filename = path.basename(req.file.path);
-    const thumbPath = path.join('public', 'uploads', 'users', 'thumbnails', filename);
+    const thumbPath = path.join(userThumbDir, filename);
     
     // Création miniature carrée 200x200
     await sharp(req.file.path)
@@ -108,17 +113,23 @@ const processUserPhoto = async (req, res, next) => {
       .toFormat('jpeg', { quality: 80 })
       .toFile(thumbPath);
     
-    req.file.profilePhotoPath = `uploads/users/originals/${filename}`;
+    // Stockage des chemins relatifs (sans 'public/')
+    req.file.profilePhoto = `uploads/users/originals/${filename}`;
     req.file.profilePhotoThumb = `uploads/users/thumbnails/${filename}`;
     next();
   } catch (err) {
-    fs.unlinkSync(req.file.path); // Nettoyage en cas d'erreur
+    fs.unlinkSync(req.file.path);
     next(err);
   }
 };
 
-// Exportez les nouvelles fonctions
 module.exports = {
-  upload, processImage, // Pour les projets
-  uploadUserPhoto, processUserPhoto // Pour les employés
+  // Pour les projets
+  uploadProjectLogo,
+  processProjectLogo,
+   
+  
+  // Pour les utilisateurs
+  uploadUserPhoto,
+  processUserPhoto
 };

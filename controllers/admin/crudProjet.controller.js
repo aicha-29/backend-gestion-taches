@@ -1,8 +1,7 @@
 const Project = require('../../models/project');
 const User = require('../../models/user');
 const Task = require('../../models/task');
-const { upload, processImage } = require('../../utils/upload');
-const fs = require('fs');
+const { uploadProjectLogo: upload, processProjectLogo: processImage } = require('../../utils/upload');const fs = require('fs');
 const path = require('path');
 
 
@@ -137,7 +136,7 @@ exports.getAllProjectsForCards = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const baseUrl = `${req.protocol}://${req.get('host')}/public/projects/`;
+    const baseUrl = `${req.protocol}://${req.get('host')}/public`;
     const formattedProjects = projects.map(project => {
     const { logoUrl, thumbnailUrl } = buildImageUrls(req, project);
       return{
@@ -147,7 +146,8 @@ exports.getAllProjectsForCards = async (req, res) => {
       assignedEmployees: project.assignedEmployees?.map(emp => ({
         name: emp.name,
         position: emp.position,
-        profilePhoto: emp.profilePhotoThumb ? `${baseUrl}/${emp.profilePhotoThumb}` : null
+        profilePhoto: emp.profilePhoto ? `${baseUrl}/${emp.profilePhoto}` : null,
+        profilePhotoThumb: emp.profilePhotoThumb ? `${baseUrl}/${emp.profilePhotoThumb}` : null
       }))|| []
     };
   });
@@ -181,7 +181,7 @@ exports.getProjectDetails = async (req, res) => {
       });
     }
 
-    const baseUrl = `${req.protocol}://${req.get('host')}/public/uploads/projects`;
+    const baseUrl = `${req.protocol}://${req.get('host')}/public`;
     
     // Formatage des dates
     project.startDate = project.startDate?.toISOString().split('T')[0];
@@ -257,9 +257,11 @@ exports.updateProject = async (req, res) => {
           });
         }
 
+
+
         // Sauvegarder les anciens chemins pour nettoyage
-        const oldLogo = project.logo;
-        const oldThumbnail = project.thumbnail;
+        const oldLogo = path.join('public/uploads/projects/originals',project.logo);
+        const oldThumbnail =path.join('public/uploads/projects/thumbnails',project.thumbnail);
 
         // Mise à jour des champs de base
         project.name = name || project.name;
@@ -274,15 +276,15 @@ exports.updateProject = async (req, res) => {
         if (removeLogo === 'true') {
           // Supprimer le logo existant
           if (project.logo) {
-            fs.unlinkSync(path.join('public', project.logo));
-            if (project.thumbnail) fs.unlinkSync(path.join('public', project.thumbnail));
+            fs.unlinkSync(oldLogo);
+            if (project.thumbnail) fs.unlinkSync(oldThumbnail);
             project.logo = null;
             project.thumbnail = null;
           }
         } else if (req.file) {
           // Mettre à jour avec un nouveau logo
-          project.logo = req.file.logoPath;
-          project.thumbnail = req.file.thumbnail;
+          project.logo = req.file.filename;
+          project.thumbnail = req.file.filename;
         }
 
         // Gestion des employés assignés (inchangé)
@@ -318,8 +320,8 @@ exports.updateProject = async (req, res) => {
 
         // Supprimer les anciennes images si remplacées
         if ((req.file || removeLogo === 'true') && oldLogo) {
-          fs.unlinkSync(path.join('public', oldLogo));
-          if (oldThumbnail) fs.unlinkSync(path.join('public', oldThumbnail));
+          fs.unlinkSync( oldLogo);
+          if (oldThumbnail) fs.unlinkSync(oldThumbnail);
         }
 
         const updatedProject = await Project.findById(id)
@@ -329,14 +331,6 @@ exports.updateProject = async (req, res) => {
             match: { role: 'employee' }
           })
           .lean();
-
-        // Construire les URLs pour les employés aussi
-        const baseUrl = `${req.protocol}://${req.get('host')}/public`;
-        updatedProject.assignedEmployees = updatedProject.assignedEmployees?.map(emp => ({
-          ...emp,
-          profilePhoto: emp.profilePhoto ? `${baseUrl}/${emp.profilePhoto}` : null,
-          profilePhotoThumb: emp.profilePhotoThumb ? `${baseUrl}/${emp.profilePhotoThumb}` : null
-        })) || [];
 
         res.json({
           success: true,
@@ -381,9 +375,9 @@ exports.deleteProject = async (req, res) => {
 
     // Supprimer les images du projet
     if (project.logo) {
-      fs.unlinkSync(path.join('public', project.logo));
+      fs.unlinkSync(path.join('public/uploads/projects/originals', project.logo));
       if (project.thumbnail) {
-        fs.unlinkSync(path.join('public', project.thumbnail));
+        fs.unlinkSync(path.join('public/uploads/projects/thumbnails', project.thumbnail));
       }
     }
 

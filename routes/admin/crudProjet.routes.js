@@ -21,8 +21,8 @@ router.post(
   crudProjectController.createProject
 );
 
-router.post(
-  '/update',
+router.put(
+  '/update/:id',
    authMiddleware,
   roleMiddleware.roleMiddleware('admin'),
   crudProjectController.updateProject
