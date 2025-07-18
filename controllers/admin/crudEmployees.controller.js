@@ -112,8 +112,8 @@ exports.createEmployee = async (req, res) => {
       }
 
       // Validation des données requises
-      const { name, email, password, position, cin } = req.body;
-      if (!name || !email || !position || !cin || !password) {
+      const { name, email, password, position, cin,role } = req.body;
+      if (!name || !email || !position || !cin || !password || !role) {
         // Supprimer le fichier uploadé si la validation échoue
         if (req.file) fs.unlinkSync(req.file.path);
         return res.status(400).json({ message: 'Tous les champs obligatoires doivent être remplis' });
@@ -126,6 +126,11 @@ exports.createEmployee = async (req, res) => {
         return res.status(400).json({ message: 'Cet email est déjà utilisé' });
       }
 
+         const existingCin = await User.findOne({ cin });
+        if (existingCin) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({ message: 'Cet cin est déjà utilisé' });
+      }
       // Créer le nouvel employé
       const newEmployee = new User({
         name,
@@ -133,7 +138,7 @@ exports.createEmployee = async (req, res) => {
         password,
         position,
         cin,
-        role: 'employee', // Définit automatiquement le rôle
+        role, // Définit automatiquement le rôle
         profilePhoto: req.file?.profilePhoto || null,
         profilePhotoThumb: req.file?.profilePhotoThumb || null
       });
