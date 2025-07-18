@@ -1,5 +1,7 @@
 const User = require('../../models/user');
 const Project = require('../../models/project');
+const Task=require('../../models/task');
+const mongoose=require('mongoose');
 const { uploadUserPhoto,processUserPhoto}=require('../../middlewares/upload');
 const fs = require('fs');
 const path = require('path');
@@ -290,5 +292,94 @@ exports.updateEmployee = async (req, res) => {
       message: 'Erreur serveur lors de la mise à jour',
       error: error.message 
     });
+  }
+};
+
+
+
+//supprimer un employe
+
+
+exports.deleteEmployee = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const employeeId = req.params.id;
+
+    // 1. Vérifier si l'employé existe
+    const employee = await User.findById(employeeId).session(session);
+    if (!employee) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Employé non trouvé' });
+    }
+
+    // 2. Supprimer les fichiers de photo de profil s'ils existent
+    if (employee.profilePhoto && employee.profilePhoto !== 'default-avatar.png') {
+      const photoPath = path.join('public', employee.profilePhoto);
+      const thumbPath = employee.profilePhotoThumb
+      ? path.join('public', employee.profilePhotoThumb)
+      : null;
+
+  
+      if (thumbPath) {
+        // Supprime les deux fichiers en parallèle
+        await Promise.all([
+          fs.promises.unlink(photoPath).catch(err => console.error('Error deleting photo:', err)),
+          fs.promises.unlink(thumbPath).catch(err => console.error('Error deleting thumbnail:', err))
+        ]);
+      } else {
+        // Supprime uniquement la photo si la miniature n'existe pas
+        await fs.promises.unlink(photoPath).catch(err => console.error('Error deleting photo:', err));
+      }
+    }
+  
+
+    
+
+    // 3. Retirer l'employé des projets assignés
+    await Project.updateMany(
+      { assignedEmployees: employeeId },
+      { $pull: { assignedEmployees: employeeId } },
+      { session }
+    );
+
+    // 4. Mettre à jour les tâches assignées (les désassigner)
+   /* await Task.updateMany(
+      { assignedTo: employeeId },
+      { $set: { assignedTo: null } },
+      { session }
+    );*/
+    await Task.deleteMany(
+      { assignedTo: employeeId },
+      { session }
+    );
+
+
+    // 5. Supprimer l'employé
+    await User.deleteOne({ _id: employeeId }).session(session);
+
+    // 6. Valider la transaction
+    await session.commitTransaction();
+
+    res.status(200).json({ 
+      message: 'Employé supprimé avec succès',
+      deletedEmployee: {
+        id: employee._id,
+        name: employee.name,
+        email: employee.email
+      }
+    });
+  } catch (error) {
+    // En cas d'erreur, annuler la transaction
+    await session.abortTransaction();
+    
+    console.error('Erreur lors de la suppression:', error);
+    res.status(500).json({ 
+      message: 'Erreur lors de la suppression de l\'employé',
+      error: error.message 
+    });
+  } finally {
+    session.endSession();
   }
 };

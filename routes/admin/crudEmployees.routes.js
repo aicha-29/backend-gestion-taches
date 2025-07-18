@@ -26,4 +26,11 @@ router.put('/:id', authMiddleware,
     employeesController.updateEmployee);
 
     
+router.delete('/:id', authMiddleware,
+  roleMiddleware.roleMiddleware('admin'),
+  employeesController.deleteEmployee);
+
+
+
+  
 module.exports = router;
