@@ -1,7 +1,8 @@
 const Project = require('../../models/project');
 const User = require('../../models/user');
 const Task = require('../../models/task');
-const { uploadProjectLogo: upload, processProjectLogo: processImage } = require('../../utils/upload');const fs = require('fs');
+const { uploadProjectLogo: upload, processProjectLogo: processImage } = require('../../middlewares/upload');
+const fs = require('fs');
 const path = require('path');
 
 
@@ -73,7 +74,7 @@ exports.createProject = async (req, res) => {
           const employees = await User.find({ 
             cin: { $in: assignedEmployeesCINs },
             role: 'employee'
-          }).select('_id');
+          }).select('_id cin');
 
           if (employees.length !== assignedEmployeesCINs.length) {
             const missingCINs = assignedEmployeesCINs.filter(cin => 
@@ -82,7 +83,7 @@ exports.createProject = async (req, res) => {
             if (req.file) {
               fs.unlinkSync(req.file.path);
               if (req.file.thumbnail) {
-                fs.unlinkSync(path.join('public', req.file.thumbnail));
+                fs.unlinkSync(path.join('public',req.file.thumbnailPath));
               }
             }
             return res.status(404).json({ 
@@ -287,34 +288,41 @@ exports.updateProject = async (req, res) => {
           project.thumbnail = req.file.filename;
         }
 
-        // Gestion des employés assignés (inchangé)
-        if (assignedEmployeesCINs !== undefined) {
-          if (assignedEmployeesCINs.length > 0) {
-            const employees = await User.find({
-              cin: { $in: assignedEmployeesCINs },
-              role: 'employee'
-            }).select('_id');
+  if (assignedEmployeesCINs !== undefined) {
+    if (assignedEmployeesCINs.length > 0) {
+    // Convertir les CINs en strings pour la comparaison
+    const assignedCINs = assignedEmployeesCINs.map(cin => cin.toString());
+    
+    const employees = await User.find({
+      cin: { $in: assignedCINs },
+      role: 'employee'
+    }).select('_id cin');
 
-            if (employees.length !== assignedEmployeesCINs.length) {
-              const foundCINs = employees.map(emp => emp.cin);
-              const missingCINs = assignedEmployeesCINs.filter(cin => !foundCINs.includes(cin));
-              if (req.file) {
-                fs.unlinkSync(req.file.path);
-                if (req.file.thumbnail) {
-                  fs.unlinkSync(path.join('public', req.file.thumbnail));
-                }
-              }
-              return res.status(404).json({
-                success: false,
-                message: 'Certains employés n\'existent pas',
-                missingCINs
-              });
-            }
-            project.assignedEmployees = employees.map(emp => emp._id);
-          } else {
-            project.assignedEmployees = [];
-          }
+    // Vérification plus robuste
+    const foundCINs = employees.map(emp => emp.cin.toString());
+    const missingCINs = assignedCINs.filter(cin => 
+      !foundCINs.includes(cin)
+    );
+
+    if (missingCINs.length > 0) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+        if (req.file.thumbnail) {
+          fs.unlinkSync(path.join('public', req.file.thumbnail));
         }
+      }
+      return res.status(404).json({
+        success: false,
+        message: 'Certains employés n\'existent pas',
+        missingCINs
+      });
+    }
+
+    project.assignedEmployees = employees.map(emp => emp._id);
+  } else {
+    project.assignedEmployees = [];
+  }
+}
 
         await project.save();
 
@@ -327,7 +335,7 @@ exports.updateProject = async (req, res) => {
         const updatedProject = await Project.findById(id)
           .populate({
             path: 'assignedEmployees',
-            select: 'profilePhoto profilePhotoThumb',
+            select: ' name position profilePhoto profilePhotoThumb',
             match: { role: 'employee' }
           })
           .lean();

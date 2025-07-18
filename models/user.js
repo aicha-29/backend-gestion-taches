@@ -39,7 +39,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "default-avatar.png" // Valeur par défaut
   },
-    profilePhotoThumb: String 
+    profilePhotoThumb: {
+      type :String ,
+      default:''}
  }); 
 
 // Middleware de hash du mot de passe (inchangé)

@@ -29,7 +29,7 @@ const seedDatabase = async () => {
         role: "employee",
         position: "Développeur Frontend",
         cin: "J123456",
-        profilePhoto: "jean.jpg"
+        profilePhoto: "uploads/users/originals/test_image.png"
       },
       {
         name: "Marie Martin",
@@ -38,7 +38,8 @@ const seedDatabase = async () => {
         role: "employee",
         position: "Designer UI/UX",
         cin: "M789012",
-        profilePhoto: "marie.jpg"
+        profilePhoto:  "uploads/users/originals/test_image.png",
+       // profilePhotoThumb:  "uploads/users/thumbnails/test_image.png"
       },
       {
         name: "Ahmed Khan",
@@ -47,15 +48,18 @@ const seedDatabase = async () => {
         role: "employee",
         position: "Développeur Backend",
         cin: "A345678",
-        profilePhoto: "ahmed.jpg"
+        profilePhoto: "uploads/users/originals/test_image.png",
+       //profilePhotoThumb: "uploads/users/thumbnails/test_image.png"
       },
+
       { name: "Admin DevPu",
         email: "admin@devpu.com",
         password: "admin123", // hashé automatiquement via pre('save')
         role: "admin",
         position:"directeur",
         cin:123456,
-        profilePhoto:"./assets/image-directeur.png"
+        profilePhoto:"uploads/users/originals/image-directeur.png",
+
       }
     ];
 
@@ -87,7 +91,7 @@ const seedDatabase = async () => {
         company: "Mobile Inc",
         city: "Rabat",
         status: "active",
-        logo: "logo_mobile.png",
+        logo: "apple_logo.png",
         assignedEmployees: [employees[2]._id]
       },
       {
@@ -96,7 +100,7 @@ const seedDatabase = async () => {
         company: "Internal Systems",
         city: "Tanger",
         status: "inactive",
-        logo: "logo_internal.png"
+        logo: "apple_logo.png"
       }
     ]);
 

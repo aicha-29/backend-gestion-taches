@@ -3,7 +3,7 @@ const router = express.Router();
 const crudProjectController = require('../../controllers/admin/crudProjet.controller');
 const authMiddleware = require('../../middlewares/auth.middleware');
 const roleMiddleware = require('../../middlewares/role.middleware');
-
+const {uploadProjectLogo}=require('../../middlewares/upload');
 // Nouvelle endpoint spécial cartes
 router.get(
   '/cards',
@@ -25,6 +25,7 @@ router.put(
   '/update/:id',
    authMiddleware,
   roleMiddleware.roleMiddleware('admin'),
+  uploadProjectLogo,
   crudProjectController.updateProject
 );
 
