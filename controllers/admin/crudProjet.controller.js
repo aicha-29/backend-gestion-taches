@@ -327,7 +327,7 @@ exports.updateProject = async (req, res) => {
         await project.save();
 
         // Supprimer les anciennes images si remplacées
-        if ((req.file || removeLogo === 'true') && oldLogo) {
+        if (req.file  && oldLogo) {
           fs.unlinkSync( oldLogo);
           if (oldThumbnail) fs.unlinkSync(oldThumbnail);
         }
