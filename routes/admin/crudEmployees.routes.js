@@ -13,7 +13,7 @@ router.get('/',  authMiddleware,
 
 router.get('/detailse/:id', authMiddleware,
   roleMiddleware.roleMiddleware('admin'), 
-    employeesController.getEmployeeDetails);
+  employeesController.getEmployeeDetails);
 
 router.post('/ajout', authMiddleware,
   roleMiddleware.roleMiddleware('admin'), 

@@ -172,7 +172,7 @@ exports.createEmployee = async (req, res) => {
 exports.updateEmployee = async (req, res) => {
   try {
     const employeeId = req.params.id;
-    const { name, email, position, cin, removePhoto } = req.body;
+    const { name, email, position, cin, removePhoto ,password } = req.body;
 
     // Vérifier si l'employé existe
     const employee = await User.findById(employeeId);
@@ -250,11 +250,32 @@ exports.updateEmployee = async (req, res) => {
         }
       }
 
+
+        if (cin && cin !== employee.cin) {
+        const existingUser = await User.findOne({ cin });
+        if (existingUser) {
+          // Nettoyer les fichiers uploadés si erreur
+          if (req.file) {
+            fs.unlinkSync(req.file.path);
+            const thumbPath = path.join(path.dirname(req.file.path), 
+                              path.basename(req.file.profilePhotoThumb));
+            if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+          }
+          return res.status(400).json({ message: 'Cet CIN est déjà utilisé' });
+        }
+      }
+
+
+
+
+
+
       // Mettre à jour les champs
-      if (name) employee.name = name;
-      if (email) employee.email = email;
-      if (position) employee.position = position;
-      if (cin) employee.cin = cin;
+      if (name && employee.name!=name) employee.name = name;
+      if (email && employee.email!=email) employee.email = email;
+      if (position && employee.position!=position) employee.position = position;
+      if (cin && employee.cin!=cin ) employee.cin = cin;
+      if(password ) employee.password=password;
 
       // Sauvegarder les modifications
       await employee.save();
